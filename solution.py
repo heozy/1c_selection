@@ -82,4 +82,25 @@ visited = set()
 
 position = explore(entrance, [entrance])
 
+# расчищаем самый выгодный обвал, пока выгода больше платы за день
+while True:
+    best_edge = None
+    best_gain = 0
+    for room in graph:
+        if room not in visited:
+            continue
+        for edge_id, nxt in graph[room]:
+            if state[edge_id] == "BROKEN" and nxt not in visited:
+                gain = profit[nxt]
+                if gain > best_gain:
+                    best_edge, best_gain, target = edge_id, gain, nxt
+
+    if best_edge is None or best_gain <= day_cost:
+        break
+
+    send(f"CLEAR {best_edge}")
+    input()
+    state[best_edge] = "OK"
+    position = explore(entrance, [target])
+
 send("END")
