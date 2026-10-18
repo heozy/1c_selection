@@ -1,3 +1,4 @@
+import heapq
 from collections import deque
 
 
@@ -52,6 +53,30 @@ def explore(position, todo):
     return position
 
 
+def expected_gain(start):
+    # ожидаемая ценность залов за расчищенным ходом: для каждого зала берём
+    # вероятность самого надёжного пути к нему через ещё не осмотренные ходы
+    best = {start: 1.0}
+    done = set()
+    heap = [(-1.0, start)]
+    gain = 0
+    while heap:
+        neg_chance, room = heapq.heappop(heap)
+        if room in done:
+            continue
+        done.add(room)
+        chance = -neg_chance
+        gain += chance * profit[room]
+        for edge_id, nxt in graph[room]:
+            if nxt in visited or edge_id in state:
+                continue
+            new_chance = chance * prob[edge_id]
+            if new_chance > best.get(nxt, 0):
+                best[nxt] = new_chance
+                heapq.heappush(heap, (-new_chance, nxt))
+    return gain
+
+
 # чтение карты
 input()
 day_cost = 0
@@ -82,7 +107,7 @@ visited = set()
 
 position = explore(entrance, [entrance])
 
-# расчищаем самый выгодный обвал, пока выгода больше платы за день
+# расчищаем самый выгодный обвал, пока ожидаемая выгода больше платы за день
 while True:
     best_edge = None
     best_gain = 0
@@ -91,7 +116,7 @@ while True:
             continue
         for edge_id, nxt in graph[room]:
             if state[edge_id] == "BROKEN" and nxt not in visited:
-                gain = profit[nxt]
+                gain = expected_gain(nxt)
                 if gain > best_gain:
                     best_edge, best_gain, target = edge_id, gain, nxt
 
